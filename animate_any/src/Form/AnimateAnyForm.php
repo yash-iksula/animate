@@ -20,7 +20,7 @@ class AnimateAnyForm extends FormBase {
 //    if (!file_exists($animate_css)) {
 //      drupal_set_message(t('animate.css library is missing.'), 'warning');
 //    }
-    //building add more form element to add animation
+//building add more form element to add animation
     $form['#attached']['library'][] = 'animate_any/animate';
 
     $form['parent_class'] = array(
@@ -40,16 +40,15 @@ class AnimateAnyForm extends FormBase {
       '#rows' => array(),
       '#attributes' => array('class' => 'animation'),
     );
-    if ($form_state->hasValue('field_deltas')) {
-      $field_deltas = $form_state->getValue('field_deltas');
+
+    $field_deltas = $form_state->get('field_deltas');
+    if (is_null($field_deltas)) {
+      $field_deltas = \NULL;
+      $form_state->set('field_deltas', $field_deltas);
     }
-    else {
-      $field_deltas = $form_state->setValue('field_deltas', \NULL);
-    }
-    ksm($form_state);
-    if ($form_state->hasValue('field_deltas')) {
+    if (!is_null($field_deltas)) {
       $field_count = $field_deltas;
-      foreach ($field_count as $delta) {
+      for ($delta = 0; $delta <= $field_deltas; $delta++) {
         $section_identity = array(
           '#title' => 'Add section class/Id',
           '#description' => t('Add class with dot(.) prefix and Id with hash(#) prefix.'),
@@ -107,7 +106,7 @@ class AnimateAnyForm extends FormBase {
     $form['add'] = array(
       '#type' => 'submit',
       '#value' => t('Add Item'),
-      '#submit' => array('animate_any_custom_add_more_add_one'),
+      '#submit' => array('::animate_any_custom_add_more_add_one'),
       '#ajax' => array(
         'callback' => 'animate_any_custom_add_more_callback',
         'wrapper' => 'item-fieldset-wrapper',
@@ -119,26 +118,6 @@ class AnimateAnyForm extends FormBase {
     );
     return $form;
   }
-
-  /**
-   * {@inheritdoc}
-   */
-//  public function validateForm(array &$form, FormStateInterface $form_state) {
-//    if ($form_state->getvalues['values']['op'] == 'Save Settings') {
-//      $parent = $form_state->getvalues['values']['parent_class'];
-//      if (empty($parent)) {
-//        $form_state->setError("parent_class", t("Please select parent class"));
-//      }
-//      foreach ($form_state['values']['animate_fieldset'] as $key => $value) {
-//        if (empty($value['section_identity'])) {
-//          $form_state->setError("animate_fieldset][{$key}][section_identity", t("Please select section identity for row @key", array('@key' => $key)));
-//        }
-//        if ($value['section_animation'] == 'none') {
-//          $form_state->setError("animate_fieldset][{$key}][section_animation", t("Please select section animation for row @key", array('@key' => $key)));
-//        }
-//      }
-//    }
-//  }
 
   public function validateForm(array &$form, FormStateInterface $form_state) {
 
@@ -165,29 +144,6 @@ class AnimateAnyForm extends FormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
 // encode data in json to store in db
     $op = (string) $form_state->getValue('op');
-    if ($op == 'Save Settings') {
-      if (empty($parent)) {
-        $form_state->setRebuild();
-        //  $form_state->setError("parent_class", t("Please select parent class"));
-      }
-// check all the section validation
-      if (!empty($form_state->getValue('animate_fieldset'))) {
-        foreach ($form_state->getValue('animate_fieldset') as $key => $value) {
-          if (empty($value['section_identity'])) {
-            $form_state->setRebuild();
-            $form_state->setError("animate_fieldset][{$key}][section_identity", t("Please select section identity for row @key", array('@key' => $key)));
-          }
-          if ($value['section_animation'] == 'none') {
-            $form_state->setRebuild();
-            $form_state->setError("animate_fieldset][{$key}][section_animation", t("Please select section animation for row @key", array('@key' => $key)));
-          }
-        }
-      }
-      else {
-        $form_state->setRebuild();
-        // $form_state->setError("", t("Please add some section for animation"));
-      }
-    }
   }
 
   /**
@@ -198,11 +154,19 @@ class AnimateAnyForm extends FormBase {
   }
 
   /**
+   * Implements Remove Animate Callback.
+   */
+  public function animate_any_custom_remove_callback(array $form, FormStateInterface $form_state) {
+    return $form['animate_fieldset'];
+  }
+
+  /**
    * Submit handler for the "add-one-more" button.
    */
   public function animate_any_custom_add_more_add_one(array $form, FormStateInterface $form_state) {
-    ksm($form_state);
-    $form_state['field_deltas'][] = count($form_state->getValue('field_deltas')) > 0 ? max($form_state->getValue('field_deltas')) + 1 : 0;
+    $max = $form_state->get('field_deltas') + 1;
+    $error = \Drupal::logger('animate_any')->error($max);
+    $form_state->set('field_deltas', $max);
     $form_state->setRebuild();
   }
 
@@ -214,3 +178,4 @@ class AnimateAnyForm extends FormBase {
   }
 
 }
+
