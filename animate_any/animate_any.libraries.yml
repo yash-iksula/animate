@@ -1,0 +1,7 @@
+animate:
+  version: 1.x
+  css:
+    layout:
+      css/animate.css: {}
+  js:
+    js/form.js: {}
